@@ -1,8 +1,8 @@
 library(discretization)
-library(stringi)
 library(foreign)
 library(e1071)
 library(stringi)
+# library(party)
 
 CAIM <- function(dataMatrix){
 	return(disc.Topdown(dataMatrix, method=1)$Disc.data)
@@ -74,9 +74,11 @@ objetiveFunction <- function(parms, myData){
 	# Vector de clases
 	Y <- trainSet[,p]
 
-	if (parms[3] == 1 || 1){
+	if (parms[3] == 1 || TRUE){
 		# Generamos el modelo
 		model <- naiveBayesTrain(X, Y, Laplace=parms[4])
+	}else{
+		model <- ctree(X, Y, Laplace=parms[4])
 	}
 
 	# Asignamos valores del conjunto de prueba
@@ -131,7 +133,7 @@ localSearch <- function(initialSol, dataSet, iter = 10, progress=0, pbar = NULL)
 
 
 analisys <- function (solution){
-	msg <- "El resultado del análisis es:\n"
+	msg <- "El resultado del análisis es:\n\n"
 	if (solution[1] == 1){
 		msg <- stri_join(msg, "\n\n>>>> Descretizar datos con CAIM.\n\n")
 	}
@@ -151,7 +153,7 @@ analisys <- function (solution){
 
 	msg <- stri_join(msg, "\n\n===================================\n")
 	tmp <- solution[5]*100
-	msg <- stri_join(msg, "Valor de confiabilidad del \n", stri_c(tmp), "%")
+	msg <- stri_join(msg, "Confiabilidad del \n", stri_c(tmp), "%")
 	msg <- stri_join(msg, "\n===================================\n")
 
 

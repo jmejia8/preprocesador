@@ -64,7 +64,7 @@ initGraphicalInterface <- function(){
 	entry.filename$setWidthChars(50)
 	box2$packStart(entry.filename)
 
-	btn.start <- gtkButton("Análizar")
+	btn.start <- gtkButton("Analizar")
 	box1$packStart(btn.start, FALSE, FALSE, 0)
 
 	# Agrega separador
