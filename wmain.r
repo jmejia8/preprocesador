@@ -25,15 +25,18 @@ initGraphicalInterface <- function(){
 
 		fname <- entry.filename$getText()
 
-		tmp <- openData(fname, dir="")
-
+		myData <- openData(fname, dir="")
 		###########################
+		txt.buff <- gtkTextBufferNew()
+		txt.buff$text <- "Iniciando análisis..."
+		gtkTextViewSetBuffer(tv, txt.buff)	
 		###########################
-		###########################
-		val <- localSearch(c(1,1,1,5), myData)
+		
+		val <- localSearch(list(1,1,1,5, 0), myData, iter=10, progress=1, pbar=pb)
 
 		txt.buff <- gtkTextBufferNew()
-		txt.buff$text <- str(val)
+		msg <- analisys(val)
+		txt.buff$text <- msg
 		gtkTextViewSetBuffer(tv, txt.buff)		
 	}
 
@@ -48,7 +51,7 @@ initGraphicalInterface <- function(){
 	box1$setBorderWidth(30)
 	frame$add(box1)   #add box1 to the frame
 
-	box2 <- gtkHBoxNew(FALSE, spacing= 15) #distance between elements
+	box2 <- gtkHBoxNew(FALSE, spacing= 50) #distance between elements
 	box2$setBorderWidth(24)
 	box1$add(box2)   #add box1 to the frame
 
@@ -56,7 +59,8 @@ initGraphicalInterface <- function(){
 	selectFile <- gtkButton("Buscar Archivo")
 	box2$packStart(selectFile, FALSE, FALSE, 0)
 
-	entry.filename <- gtkEntryNew() 
+	entry.filename <- gtkEntryNew()
+	entry.filename$setText("/home/jesus/Develop/R/verano2016/data/iris.arff")
 	entry.filename$setWidthChars(50)
 	box2$packStart(entry.filename)
 
@@ -79,6 +83,8 @@ initGraphicalInterface <- function(){
 
 	box3$packStart(tv)
 
+	pb <- gtkProgressBar()
+	box1$packStart(pb)
 
 	# Señales
 	gSignalConnect(selectFile, "clicked", onselectFileClicked)

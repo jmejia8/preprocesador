@@ -1,6 +1,8 @@
 library(discretization)
 library(stringi)
 library(foreign)
+library(e1071)
+library(stringi)
 
 CAIM <- function(dataMatrix){
 	return(disc.Topdown(dataMatrix, method=1)$Disc.data)
@@ -103,10 +105,16 @@ nextSolution <- function (solution, index){
 }
 
 
-localSearch <- function(initialSol, dataSet, iter = 10){
+localSearch <- function(initialSol, dataSet, iter = 10, progress=0, pbar = NULL){
 	solution <- initialSol
 	oldVal <- 0
 	for (i in 1:iter) {
+
+		if (progress != 0){
+			gtkMainIterationDo(FALSE)
+			gtkProgressBarSetFraction(pbar, i/iter)
+		}
+
 		newVal <- objetiveFunction(initialSol, dataSet)
 		if (oldVal < newVal){
 			oldVal <- newVal
@@ -116,5 +124,37 @@ localSearch <- function(initialSol, dataSet, iter = 10){
 		initialSol <- nextSolution(initialSol, 0)
 	}
 
+	solution[5] <- oldVal
+
 	return(solution)
+}
+
+
+analisys <- function (solution){
+	msg <- "El resultado del análisis es:\n"
+	if (solution[1] == 1){
+		msg <- stri_join(msg, "\n\n>>>> Descretizar datos con CAIM.\n\n")
+	}
+
+	if (solution[2] == 1){
+		msg <- stri_join(msg, ">>>> Descretizar datos con MDLP.\n\n")
+	}
+
+	if (solution[1] == 0 && solution[2] == 0 ){
+		msg <- stri_join(msg, ">>>> No discretizar los datos.\n\n")
+	}
+
+	if (solution[3] == 1 || 1){
+		msg <- stri_join(msg, ">>>> Se recomienda usar el clasificador Naive Bayes.\n")
+		msg <- stri_join(msg, "\tCon valor de laplace = ", stri_c(solution[4]))
+	}
+
+	msg <- stri_join(msg, "\n\n===================================\n")
+	tmp <- solution[5]*100
+	msg <- stri_join(msg, "Valor de confiabilidad del \n", stri_c(tmp), "%")
+	msg <- stri_join(msg, "\n===================================\n")
+
+
+	return (msg)
+
 }
