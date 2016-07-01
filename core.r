@@ -51,11 +51,11 @@ objetiveFunction <- function(parms, myData){
 	p <- length(myData)
 
 	# Conjunto de entrenamiento
-	s <- seq(1, N, 2)
+	s <- sample(1:N, 75)
 	trainSet <- myData[s,]
 
 	# Conjunto de prueba
-	s <- seq(2, N, 2)
+	s <- sample(1:N, 75)
 	testSet <- myData[s,]
 
 	# matriz de datos brutos
@@ -107,17 +107,26 @@ nextSolution <- function (solution, index){
 }
 
 
-localSearch <- function(initialSol, dataSet, iter = 10, progress=0, pbar = NULL){
+localSearch <- function(initialSol, dataSet, iter = 10, progress=FALSE, pbar = NULL){
 	solution <- initialSol
 	oldVal <- 0
 	for (i in 1:iter) {
 
-		if (progress != 0){
-			gtkMainIterationDo(FALSE)
+		if (progress){
+			# gtkMainIterationDo(FALSE)
+			while(gtkEventsPending()) gtkMainIteration()
 			gtkProgressBarSetFraction(pbar, i/iter)
 		}
 
-		newVal <- objetiveFunction(initialSol, dataSet)
+		# Obtenemos el promedio de entrenamiento-prueba
+		newVal <- 0
+		cossVal <- 5
+		for (i in 1:cossVal){
+			newVal <- newVal + objetiveFunction(initialSol, dataSet)
+		}
+
+		newVal <- newVal/cossVal
+
 		if (oldVal < newVal){
 			oldVal <- newVal
 			solution <- initialSol
