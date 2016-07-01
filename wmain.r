@@ -1,7 +1,13 @@
+#!/usr/bin/env Rscript
+
 require("RGtk2")
 source("core.r")
 
 initGraphicalInterface <- function(){
+
+	# Variables globales
+	myData <- NULL #openData(fname, dir="")
+	fname <- ""
 
 	onselectFileClicked <- function (button, user.data){
 	dialog <- gtkFileChooserDialog(title = "Selecciona Archivo", 
@@ -22,22 +28,29 @@ initGraphicalInterface <- function(){
 	}
 
 	onStarClicked <- function (button, user.data){
-
 		fname <- entry.filename$getText()
-
 		myData <- openData(fname, dir="")
+
 		###########################
 		txt.buff <- gtkTextBufferNew()
 		txt.buff$text <- "Iniciando análisis..."
 		gtkTextViewSetBuffer(tv, txt.buff)	
 		###########################
 		
-		val <- localSearch(list(1,1,1,5, 0), myData, iter=10, progress=1, pbar=pb)
+		val <- localSearch(list(1,1,1,5, 0), myData, iter=50, progress=TRUE, pbar=pb)
 
 		txt.buff <- gtkTextBufferNew()
 		msg <- analisys(val)
 		txt.buff$text <- msg
 		gtkTextViewSetBuffer(tv, txt.buff)		
+
+		# Pone la barra de progreso en cero
+		gtkProgressBarSetFraction(pb, 0)
+	}
+
+	onLoadDataClicked <- function(button, ...){
+		fname <- entry.filename$getText()
+		myData <- openData(fname, dir="")
 	}
 
 	window <- gtkWindow()
@@ -48,13 +61,16 @@ initGraphicalInterface <- function(){
 	window$add(frame)
 
 	box1 <- gtkVBoxNew(FALSE)
-	box1$setBorderWidth(30)
+	box1$setBorderWidth(10)
 	frame$add(box1)   #add box1 to the frame
 
-	box2 <- gtkHBoxNew(FALSE, spacing= 50) #distance between elements
-	box2$setBorderWidth(24)
-	box1$add(box2)   #add box1 to the frame
+	box2 <- gtkHBoxNew(FALSE) #distance between elements
+	box2$setBorderWidth(15)
+	box1$add(box2)
 
+	options <- gtkHBoxNew(FALSE) #distance between elements
+	options$setBorderWidth(5)
+	box1$add(options)
 
 	selectFile <- gtkButton("Buscar Archivo")
 	box2$packStart(selectFile, FALSE, FALSE, 0)
@@ -64,7 +80,17 @@ initGraphicalInterface <- function(){
 	entry.filename$setWidthChars(50)
 	box2$packStart(entry.filename)
 
+	btn.load <- gtkButton("Cargar datos")
+	options$packStart(btn.load)
+
+	combo <- gtkComboBoxNewText ()
+	myClasses <- c("Selecciona una clase:")
+	combo$setActive(-1)
+	sapply (myClasses, combo$appendText )
+	options$packStart(combo)
+
 	btn.start <- gtkButton("Analizar")
+	btn.start["width-request"] <- 50
 	box1$packStart(btn.start, FALSE, FALSE, 0)
 
 	# Agrega separador
@@ -89,49 +115,17 @@ initGraphicalInterface <- function(){
 	# Señales
 	gSignalConnect(selectFile, "clicked", onselectFileClicked)
 	gSignalConnect(btn.start, "clicked", onStarClicked)
+	gSignalConnect(btn.load, "clicked", onLoadDataClicked)
+	gSignalConnect(window, "delete-event", function (event, ...){
+		print("Saliendo...")
+		quit()
+		})
 
+	while (TRUE){
+		Sys.sleep(1)
+	}
 
 }
 
 
 initGraphicalInterface()
-
-
-
-
-
-
-
-
-
-
-
-# label.t1 <- gtkLabelNew("Discretizar:")
-# box3$packStart(label.t1, FALSE, FALSE, 0)
-
-# label.discret <- gtkLabelNew("Sí")
-# box3$packStart(label.discret, FALSE, FALSE, 0)
-
-# box3$packStart(gtkHSeparatorNew(), TRUE, TRUE, 0)
-
-# label.t2 <- gtkLabelNew("Métodos:")
-# box3$packStart(label.t2, FALSE, FALSE, 0)
-
-# label.met <- gtkLabelNew("CAIM -> MDLP")
-# box3$packStart(label.met, FALSE, FALSE, 0)
-
-
-# box4 <- gtkHBoxNew(FALSE, spacing= 15) #distance between elements
-# box4$setBorderWidth(24)
-# box1$add(box4)   #add box1 to the frame
-
-# label.t3 <- gtkLabelNew("Clasificador\nRecomendado")
-# box4$packStart(label.t3, FALSE, FALSE, 0)
-
-# box5 <- gtkHBoxNew(FALSE, spacing= 15) #distance between elements
-# box5$setBorderWidth(24)
-# box4$add(box5)   #add box1 to the frame
-
-# label.clasif <- gtkLabelNew("Naive Bayes \nKnn")
-# box4$packStart(label.clasif, FALSE, FALSE, 0)
-
