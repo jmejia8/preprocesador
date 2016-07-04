@@ -2,7 +2,7 @@ library(discretization)
 library(foreign)
 library(e1071)
 library(stringi)
-# library(party)
+library(party)
 
 CAIM <- function(dataMatrix){
 	return(disc.Topdown(dataMatrix, method=1)$Disc.data)
@@ -17,9 +17,10 @@ openData <- function(name, dir="data/"){
 	return(read.arff(stri_join(dir, name)))
 }
 
-naiveBayesTrain <- function(X, Y, Laplace = 0){
+naiveBayesTrain <- function(myClass, mdata, Laplace = 0){
 	# Clasificamos los datos
-	model <- naiveBayes(X, Y, laplace = Laplace)
+	names(mdata)[myClass] <- "class.selected"
+	model <- naiveBayes(class.selected ~ ., data = mdata, laplace = Laplace)
 
 	return(model)
 }
@@ -41,11 +42,21 @@ naiveBayesTest <- function(model, testSet, Y){
 }
 
 
-objetiveFunction <- function(parms, myData){
+objetiveFunction <- function(parms, myData, myClass){
 	# 1: CAIM; 			Valores: 0, 1
 	# 2: MDLP; 			Valores: 0, 1
 	# 3: naiveBayes;	Valores: 0, 1
 	# 		4: laplace;	real no negativo
+
+	if (parms[1] == 1){
+		# Matriz de datos discretos
+		myData <- CAIM(myData)
+	}
+
+	if (parms[2] == 1){
+		# Matriz de datos discretos
+		myData <- MDLP(myData)
+	}
 
 	N <- length(myData[,1])
 	p <- length(myData)
@@ -58,27 +69,16 @@ objetiveFunction <- function(parms, myData){
 	s <- sample(1:N, 75)
 	testSet <- myData[s,]
 
-	# matriz de datos brutos
-	X <- trainSet[,-p]
-
-	if (parms[1] == 1){
-		# Matriz de datos discretos
-		X <- CAIM(X)
-	}
-
-	if (parms[2] == 1){
-		# Matriz de datos discretos
-		X <- MDLP(X)
-	}
-
 	# Vector de clases
+	X <- trainSet[,-p]
 	Y <- trainSet[,p]
 
-	if (parms[3] == 1 || TRUE){
+	if (parms[3] == 1){
 		# Generamos el modelo
-		model <- naiveBayesTrain(X, Y, Laplace=parms[4])
+		model <- naiveBayesTrain(myClass, trainSet, Laplace=parms[4])
 	}else{
-		model <- ctree(X, Y, Laplace=parms[4])
+		names(trainSet)[myClass] <- "class.selected"
+		model <- ctree(class.selected ~., trainSet)
 	}
 
 	# Asignamos valores del conjunto de prueba
@@ -103,13 +103,14 @@ nextSolution <- function (solution, index){
 		laplace <- 0
 	}
 
-	return( c(doCaim, doMdlp, doNaive, laplace) )
+	return( c(doCaim, doMdlp, doNaive, laplace, 0) )
 }
 
 
-localSearch <- function(initialSol, dataSet, iter = 10, progress=FALSE, pbar = NULL){
+localSearch <- function(initialSol, dataSet, myClass, iter = 10, progress=FALSE, pbar = NULL){
 	solution <- initialSol
 	oldVal <- 0
+
 	for (i in 1:iter) {
 
 		if (progress){
@@ -122,7 +123,7 @@ localSearch <- function(initialSol, dataSet, iter = 10, progress=FALSE, pbar = N
 		newVal <- 0
 		cossVal <- 5
 		for (i in 1:cossVal){
-			newVal <- newVal + objetiveFunction(initialSol, dataSet)
+			newVal <- newVal + objetiveFunction(initialSol, dataSet, myClass)
 		}
 
 		newVal <- newVal/cossVal
@@ -155,13 +156,16 @@ analisys <- function (solution){
 		msg <- stri_join(msg, ">>>> No discretizar los datos.\n\n")
 	}
 
-	if (solution[3] == 1 || 1){
+	if (solution[3] == 1){
 		msg <- stri_join(msg, ">>>> Se recomienda usar el clasificador Naive Bayes.\n")
 		msg <- stri_join(msg, "\tCon valor de laplace = ", stri_c(solution[4]))
+	}else{
+		msg <- stri_join(msg, ">>>> Se recomienda usar un árbol de decisiones.\n")
+
 	}
 
 	msg <- stri_join(msg, "\n\n===================================\n")
-	tmp <- solution[5]*100
+	tmp <- solution[5] * 100
 	msg <- stri_join(msg, "Confiabilidad del \n", stri_c(tmp), "%")
 	msg <- stri_join(msg, "\n===================================\n")
 
