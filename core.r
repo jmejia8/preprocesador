@@ -107,11 +107,11 @@ nextSolution <- function (solution, index){
 }
 
 
-localSearch <- function(initialSol, dataSet, myClass, iter = 10, progress=FALSE, pbar = NULL){
+localSearch <- function(initialSol, dataSet, myClass, iter = 10, progress=FALSE, pbar = NULL, tview = NULL){
 	solution <- initialSol
 	oldVal <- 0
 
-	for (i in 1:iter) {
+	for (i in 0:iter) {
 
 		if (progress){
 			# gtkMainIterationDo(FALSE)
@@ -122,7 +122,7 @@ localSearch <- function(initialSol, dataSet, myClass, iter = 10, progress=FALSE,
 		# Obtenemos el promedio de entrenamiento-prueba
 		newVal <- 0
 		cossVal <- 5
-		for (i in 1:cossVal){
+		for (j in 1:cossVal){
 			newVal <- newVal + objetiveFunction(initialSol, dataSet, myClass)
 		}
 
@@ -133,17 +133,20 @@ localSearch <- function(initialSol, dataSet, myClass, iter = 10, progress=FALSE,
 			solution <- initialSol
 		}
 
+		initialSol[5] <- newVal
+		status(initialSol, tview, i)
+
 		initialSol <- nextSolution(initialSol, 0)
 	}
 
-	solution[5] <- oldVal
+		solution[5] <- oldVal
 
 	return(solution)
 }
 
 
 analisys <- function (solution){
-	msg <- "El resultado del análisis es:\n\n"
+	msg <- "\n\n------------\n\nEl resultado del análisis es:\n\n"
 	if (solution[1] == 1){
 		msg <- stri_join(msg, "\n\n>>>> Descretizar datos con CAIM.\n\n")
 	}
@@ -166,10 +169,48 @@ analisys <- function (solution){
 
 	msg <- stri_join(msg, "\n\n===================================\n")
 	tmp <- solution[5] * 100
-	msg <- stri_join(msg, "Confiabilidad del \n", stri_c(tmp), "%")
+	msg <- stri_join(msg, "Confiabilidad del \n", stri_c(round(tmp, digits=1)), "%")
 	msg <- stri_join(msg, "\n===================================\n")
 
 
 	return (msg)
+
+}
+
+status <- function(solution, textBox, iter){
+	msg <- "\n"
+
+	msg <- stri_join(msg, stri_c(iter), ".- \t")
+
+		if (solution[1] == 1){
+		msg <- stri_join(msg, "CAIM -> ")
+	}
+
+	if (solution[2] == 1){
+		msg <- stri_join(msg, "MDLP -> ")
+	}
+
+	if (solution[1] == 0 && solution[2] == 0 ){
+		msg <- stri_join(msg, "Sin discretizar datos ->")
+	}
+
+	# msg <- stri_join(msg, " \t ")
+
+	if (solution[3] == 1){
+		msg <- stri_join(msg, "Naive Bayes")
+		msg <- stri_join(msg, " laplace = ", stri_c(round(solution[4], digits=2)))
+		msg <- stri_join(msg, " -> ")
+	}else{
+		msg <- stri_join(msg, "árbol de decisiones ->")
+
+	}
+	
+	tmp <- solution[5] * 100
+	msg <- stri_join(msg, "\t ", stri_c(round(tmp, digits=2)), "%")
+
+	txt.buff <- textBox$getBuffer()
+	bounds <- txt.buff$getBounds()
+	txt.buff$insert(bounds$end, msg)
+	gtkTextViewSetBuffer(textBox, txt.buff)
 
 }
