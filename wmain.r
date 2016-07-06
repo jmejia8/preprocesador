@@ -41,15 +41,16 @@ initGraphicalInterface <- function(){
 
 		###########################
 		txt.buff <- gtkTextBufferNew()
-		txt.buff$text <- "Iniciando análisis..."
+		txt.buff$text <- "==================================="
 		gtkTextViewSetBuffer(tv, txt.buff)	
 		###########################
 		mc <- combo["active"]
-		val <- localSearch(c(1,1,1,5, 0), myData, myClass = mc, iter=spinbutton["value"], progress=TRUE, pbar=pb)
+		val <- localSearch(c(1,1,1,5, 0), myData, myClass = mc, iter=spinbutton["value"], progress=TRUE, pbar=pb, tview = tv)
 
-		txt.buff <- gtkTextBufferNew()
+		txt.buff <- tv$getBuffer()
+		bounds <- txt.buff$getBounds()
 		msg <- analisys(val)
-		txt.buff$text <- msg
+		txt.buff$insert(bounds$end, msg)
 		gtkTextViewSetBuffer(tv, txt.buff)		
 
 		# Pone la barra de progreso en cero
@@ -71,6 +72,7 @@ initGraphicalInterface <- function(){
 		sapply(myClasses, combo$appendText)
 		gtkMainIterationDo(FALSE)
 		combo["active"] <- 0
+		combo$popup()
 	}
 
 	windowError <- function (msg){
@@ -152,14 +154,20 @@ initGraphicalInterface <- function(){
 	# box3$setBorderWidth()
 	box1$add(box3)   #add box1 to the frame
 
+	######
+	scrolled_window <- gtkScrolledWindow ()
+	scrolled_window $ setPolicy ( " automatic " , " automatic " )
+	#####
+
 	tv <- gtkTextViewNew()
 	tv["width-request"] <- 100
 	tv["height-request"] <- 300
 	txt.buff <- gtkTextBufferNew()
 	txt.buff$text <- "Aún no hay información..."
 	gtkTextViewSetBuffer(tv, txt.buff)
+	scrolled_window$add(tv)
 
-	box3$packStart(tv)
+	box3$packStart(scrolled_window)
 
 	pb <- gtkProgressBar()
 	box1$packStart(pb)
